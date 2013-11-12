@@ -467,6 +467,7 @@ void ofApp::drawLabeledPoint(int label, ofVec2f position, ofColor color, ofColor
 	float w = ofGetWidth();
 	float h = ofGetHeight();
 	ofSetLineWidth(1.5);
+	position.x = roundf(position.x) + .5, position.y = roundf(position.y) + .5;
 	ofLine(position - ofVec2f(w,0), position + ofVec2f(w,0));
 	ofLine(position - ofVec2f(0,h), position + ofVec2f(0,h));
 	ofCircle(position, geti("selectedPointSize"));
@@ -573,7 +574,7 @@ void ofApp::drawRenderMode() {
 		}
 		if(getb("dragging")) {
 			Point2f& cur = imagePoints[choice];
-			float rate = ofGetMousePressed(0) ? getf("slowLerpRate") : getf("fastLerpRate");
+			float rate = ofGetMousePressed(0) ? getf("fastLerpRate") : getf("slowLerpRate");
 			cur = Point2f(ofLerp(cur.x, mouseX, rate), ofLerp(cur.y, mouseY, rate));
 			drawLabeledPoint(choice, toOf(cur), yellowPrint, ofColor::white, ofColor::black);
 			ofSetColor(ofColor::black);
