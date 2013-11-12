@@ -7,7 +7,7 @@
 #include "ofxAutoControlPanel.h"
 #include "LineArt.h"
 
-class testApp : public ofBaseApp {
+class ofApp : public ofBaseApp {
 public:
 	void setb(string name, bool value);
 	void seti(string name, int value);

@@ -1,28 +1,28 @@
-#include "testApp.h"
+#include "ofApp.h"
 
 using namespace ofxCv;
 using namespace cv;
 
-void testApp::setb(string name, bool value) {
+void ofApp::setb(string name, bool value) {
 	panel.setValueB(name, value);
 }
-void testApp::seti(string name, int value) {
+void ofApp::seti(string name, int value) {
 	panel.setValueI(name, value);
 }
-void testApp::setf(string name, float value) {
+void ofApp::setf(string name, float value) {
 	panel.setValueF(name, value);
 }
-bool testApp::getb(string name) {
+bool ofApp::getb(string name) {
 	return panel.getValueB(name);
 }
-int testApp::geti(string name) {
+int ofApp::geti(string name) {
 	return panel.getValueI(name);
 }
-float testApp::getf(string name) {
+float ofApp::getf(string name) {
 	return panel.getValueF(name);
 }
 
-void testApp::setup() {
+void ofApp::setup() {
 	ofSetDrawBitmapMode(OF_BITMAPMODE_MODEL_BILLBOARD);
 	ofSetVerticalSync(true);
 	calibrationReady = false;
@@ -30,7 +30,7 @@ void testApp::setup() {
 	setupControlPanel();
 }
 
-void testApp::update() {
+void ofApp::update() {
 	ofSetWindowTitle("mapamok");
 	if(getb("randomLighting")) {
 		setf("lightX", ofSignedNoise(ofGetElapsedTimef(), 1, 1) * 1000);
@@ -61,7 +61,7 @@ void disableFog() {
 	glDisable(GL_FOG);
 }
 
-void testApp::draw() {
+void ofApp::draw() {
 	ofBackground(geti("backgroundColor"));
     if(getb("loadCalibration")) {
 		loadCalibration();
@@ -92,7 +92,7 @@ void testApp::draw() {
 	}
 }
 
-void testApp::keyPressed(int key) {
+void ofApp::keyPressed(int key) {
 	if(key == OF_KEY_LEFT || key == OF_KEY_UP || key == OF_KEY_RIGHT|| key == OF_KEY_DOWN){
 		int choice = geti("selectionChoice");
 		setb("arrowing", true);
@@ -124,7 +124,7 @@ void testApp::keyPressed(int key) {
 	}
 }
 
-void testApp::mousePressed(int x, int y, int button) {
+void ofApp::mousePressed(int x, int y, int button) {
 	setb("selected", getb("hoverSelected"));
 	seti("selectionChoice", geti("hoverChoice"));
 	if(getb("selected")) {
@@ -132,11 +132,11 @@ void testApp::mousePressed(int x, int y, int button) {
 	}
 }
 
-void testApp::mouseReleased(int x, int y, int button) {
+void ofApp::mouseReleased(int x, int y, int button) {
 	setb("dragging", false);
 }
 
-void testApp::setupMesh() {
+void ofApp::setupMesh() {
 	model.loadModel("model.dae");
 	objectMesh = model.getMesh(0);
 	int n = objectMesh.getNumVertices();
@@ -148,7 +148,7 @@ void testApp::setupMesh() {
 	}
 }
 
-void testApp::render() {
+void ofApp::render() {
 	ofPushStyle();
 	ofSetLineWidth(geti("lineWidth"));
 	if(getb("useSmoothing")) {
@@ -225,7 +225,7 @@ void testApp::render() {
 	ofPopStyle();
 }
 
-void testApp::saveCalibration() {
+void ofApp::saveCalibration() {
 	string dirName = "calibration-" + ofGetTimestampString() + "/";
 	ofDirectory dir(dirName);
 	dir.create();
@@ -295,7 +295,7 @@ void testApp::saveCalibration() {
 	saveMat(Mat(imagePoints), dirName + "imagePoints.yml");
 }
 
-void testApp::loadCalibration() {
+void ofApp::loadCalibration() {
     
     // retrieve advanced calibration folder
     
@@ -358,7 +358,7 @@ void testApp::loadCalibration() {
     calibrationReady = true;
 }
 
-void testApp::setupControlPanel() {
+void ofApp::setupControlPanel() {
 	panel.setup();
 	panel.msg = "tab hides the panel, space toggles render/selection mode, 'f' toggles fullscreen.";
 	
@@ -412,7 +412,7 @@ void testApp::setupControlPanel() {
 	panel.addSlider("fastLerpRate", 1, 0, 1);
 }
 
-void testApp::updateRenderMode() {
+void ofApp::updateRenderMode() {
 	// generate camera matrix given aov guess
 	float aov = getf("aov");
 	Size2i imageSize(ofGetWidth(), ofGetHeight());
@@ -458,7 +458,7 @@ void testApp::updateRenderMode() {
 	}
 }
 
-void testApp::drawLabeledPoint(int label, ofVec2f position, ofColor color, ofColor bg, ofColor fg) {
+void ofApp::drawLabeledPoint(int label, ofVec2f position, ofColor color, ofColor bg, ofColor fg) {
 	glPushAttrib(GL_DEPTH_BUFFER_BIT);
 	glDisable(GL_DEPTH_TEST);
 	//glEnable(GL_DEPTH_TEST);
@@ -474,7 +474,7 @@ void testApp::drawLabeledPoint(int label, ofVec2f position, ofColor color, ofCol
 	glPopAttrib();
 }
 	
-void testApp::drawSelectionMode() {
+void ofApp::drawSelectionMode() {
 	ofSetColor(255);
 	cam.begin();
 	float scale = getf("scale");
@@ -528,7 +528,7 @@ void testApp::drawSelectionMode() {
 	}
 }
 
-void testApp::drawRenderMode() {
+void ofApp::drawRenderMode() {
 	glPushMatrix();
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
