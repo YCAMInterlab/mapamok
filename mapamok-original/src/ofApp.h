@@ -38,6 +38,7 @@ public:
 	ofVboMesh objectMesh;
 	ofMesh imageMesh;
 	ofLight light;
+	
 	ofxAutoControlPanel panel;
 	
 	vector<cv::Point3f> objectPoints;
