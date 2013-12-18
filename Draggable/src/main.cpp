@@ -18,112 +18,52 @@ ofVec2f getDirectionFromKey(int key) {
 	return ofVec2f(0, 0);
 }
 
-class Draggable {
-protected:
-	ofVec2f position;
-	
-	ofVec2f mouseStart, positionStart;
-	bool dragging, selected, command;
-	
-	virtual bool isHit(ofVec2f v) = 0;
-	
+class EventWatcher {
 public:
-	Draggable()
-	:dragging(false)
-	,selected(false)
-	,command(false) {
-		
-	}
-	void setPosition(ofVec2f position) {
-		this->position = position;
-	}
-	void mousePressed(ofMouseEventArgs& mouse) {
-		if(mouse.button == OF_MOUSE_BUTTON_LEFT) {
-			if(isHit(mouse)) {
-				dragging = true;
-				selected = true;
-				mouseStart = mouse;
-				positionStart = position;
-			} else {
-				dragging = false;
-				selected = false;
-			}
-		}
-	}
-	void mouseMoved(ofMouseEventArgs& mouse) {
-		if(dragging) {
-			ofVec2f offset = mouse - mouseStart;
-			position = positionStart + offset;
-		}
-	}
-	void mouseDragged(ofMouseEventArgs& mouse) {
-		mouseMoved(mouse);
-	}
-	void mouseReleased(ofMouseEventArgs& mouse) {
-		if(mouse.button == OF_MOUSE_BUTTON_LEFT) {
-			dragging = false;
-		}
-	}
-	void keyPressed(ofKeyEventArgs& key) {
-		if(selected && isDirectionKey(key.key)) {
-			float multiplier = command ? .25 : 1;
-			position += multiplier * getDirectionFromKey(key.key);
-		}
-		if(key.key == OF_KEY_COMMAND) {
-			command = true;
-		}
-	}
-	void keyReleased(ofKeyEventArgs& key) {
-		if(key.key == OF_KEY_COMMAND) {
-			command = false;
-		}
-	}
-	virtual void draw(ofEventArgs& args) = 0;
+	virtual void mousePressed(ofMouseEventArgs& mouse) {}
+	virtual void mouseMoved(ofMouseEventArgs& mouse) {}
+	virtual void mouseDragged(ofMouseEventArgs& mouse) {}
+	virtual void mouseReleased(ofMouseEventArgs& mouse) {}
+	virtual void keyPressed(ofKeyEventArgs& key) {}
+	virtual void keyReleased(ofKeyEventArgs& key) {}
+	virtual void draw(ofEventArgs& args) {}
 	void enableControlEvents() {
-		ofAddListener(ofEvents().keyPressed, this, &Draggable::keyPressed);
-		ofAddListener(ofEvents().keyReleased, this, &Draggable::keyReleased);
-		ofAddListener(ofEvents().mousePressed, this, &Draggable::mousePressed);
-		ofAddListener(ofEvents().mouseReleased, this, &Draggable::mouseReleased);
-		ofAddListener(ofEvents().mouseMoved, this, &Draggable::mouseMoved);
-		ofAddListener(ofEvents().mouseDragged, this, &Draggable::mouseDragged);
+		ofAddListener(ofEvents().keyPressed, this, &EventWatcher::keyPressed);
+		ofAddListener(ofEvents().keyReleased, this, &EventWatcher::keyReleased);
+		ofAddListener(ofEvents().mousePressed, this, &EventWatcher::mousePressed);
+		ofAddListener(ofEvents().mouseReleased, this, &EventWatcher::mouseReleased);
+		ofAddListener(ofEvents().mouseMoved, this, &EventWatcher::mouseMoved);
+		ofAddListener(ofEvents().mouseDragged, this, &EventWatcher::mouseDragged);
 	}
 	void disableControlEvents() {
-		ofRemoveListener(ofEvents().keyPressed, this, &Draggable::keyPressed);
-		ofRemoveListener(ofEvents().keyReleased, this, &Draggable::keyReleased);
-		ofRemoveListener(ofEvents().mousePressed, this, &Draggable::mousePressed);
-		ofRemoveListener(ofEvents().mouseReleased, this, &Draggable::mouseReleased);
-		ofRemoveListener(ofEvents().mouseMoved, this, &Draggable::mouseMoved);
-		ofRemoveListener(ofEvents().mouseDragged, this, &Draggable::mouseDragged);
+		ofRemoveListener(ofEvents().keyPressed, this, &EventWatcher::keyPressed);
+		ofRemoveListener(ofEvents().keyReleased, this, &EventWatcher::keyReleased);
+		ofRemoveListener(ofEvents().mousePressed, this, &EventWatcher::mousePressed);
+		ofRemoveListener(ofEvents().mouseReleased, this, &EventWatcher::mouseReleased);
+		ofRemoveListener(ofEvents().mouseMoved, this, &EventWatcher::mouseMoved);
+		ofRemoveListener(ofEvents().mouseDragged, this, &EventWatcher::mouseDragged);
 	}
 	void enableDrawEvent() {
-		ofAddListener(ofEvents().draw, this, &Draggable::draw);
+		ofAddListener(ofEvents().draw, this, &EventWatcher::draw);
 	}
 	void disableDrawEvent() {
-		ofRemoveListener(ofEvents().draw, this, &Draggable::draw);
+		ofRemoveListener(ofEvents().draw, this, &EventWatcher::draw);
 	}
 };
 
-class DraggableCircle : public Draggable {
-protected:
-	float clickRadiusSquared;
+class DraggablePoint {
+public:
+	ofVec2f position, positionStart;
+	bool selected, dragging;
 	
-	bool isHit(ofVec2f v) {
-		float dx = position.x - v.x, dy = position.y - v.y;
-		float distanceSquared = dx * dx + dy * dy;
-		return distanceSquared < clickRadiusSquared;
+	DraggablePoint()
+	:selected(false)
+	,dragging(false) {
 	}
-public:
-	DraggableCircle()
-	:clickRadiusSquared(100) {
+	bool isHit(ofVec2f v, float clickRadiusSquared) {
+		return position.distanceSquared(v) < clickRadiusSquared;
 	}
-	void setClickRadius(float clickRadius = 10) {
-		this->clickRadiusSquared = clickRadius * clickRadius;
-	}
-};
-
-class Tag : public DraggableCircle {
-public:
-	void draw(ofEventArgs& args) {
+	void draw(float clickRadiusSquared) {
 		float r = sqrt(clickRadiusSquared);
 		ofPushStyle();
 		ofNoFill();
@@ -143,17 +83,85 @@ public:
 	}
 };
 
+class DraggablePoints : public EventWatcher {
+protected:
+	vector<DraggablePoint> points;
+	set<unsigned int> selected;
+	
+	ofVec2f mouseStart, positionStart;
+	float pointSize, clickRadiusSquared;
+	
+public:
+	DraggablePoints()
+	:clickRadiusSquared(0) {
+	}
+	unsigned int size() {
+		return points.size();
+	}
+	void add(const ofVec2f& v) {
+		points.push_back(DraggablePoint());
+		points.back().position = v;
+	}
+	void setClickRadius(float clickRadius) {
+		this->clickRadiusSquared = clickRadius * clickRadius;
+	}
+	void mousePressed(ofMouseEventArgs& mouse) {
+		bool shift = ofGetKeyPressed(OF_KEY_SHIFT);
+		bool hitAny = false;
+		for(int i = 0; i < size(); i++) {
+			bool hit = points[i].isHit(mouse, clickRadiusSquared);
+			if(hit && (shift || !hitAny)) {
+				points[i].selected = true;
+				selected.insert(i);
+				hitAny = true;
+			} else if(!shift) {
+				points[i].selected = false;
+				selected.erase(i);
+			}
+		}
+		mouseStart = mouse;
+		cachePositions();
+	}
+	void mouseDragged(ofMouseEventArgs& mouse) {
+		ofVec2f offset = mouse - mouseStart;
+		for(set<unsigned int>::iterator itr = selected.begin(); itr != selected.end(); itr++) {
+			points[*itr].position = points[*itr].positionStart + offset;
+		}
+	}
+	void mouseReleased(ofMouseEventArgs& mouse) {
+		cachePositions();
+	}
+	void keyPressed(ofKeyEventArgs& key) {
+		if(isDirectionKey(key.key)) {
+			float multiplier = ofGetKeyPressed(OF_KEY_COMMAND) ? .25 : 1;
+			ofVec2f offset = multiplier * getDirectionFromKey(key.key);
+			for(set<unsigned int>::iterator itr = selected.begin(); itr != selected.end(); itr++) {
+				points[*itr].position += offset;
+			}
+		}
+	}
+	void cachePositions() {
+		for(set<unsigned int>::iterator itr = selected.begin(); itr != selected.end(); itr++) {
+			points[*itr].positionStart = points[*itr].position;
+		}
+	}
+	void draw(ofEventArgs& args) {
+		for(int i = 0; i < size(); i++) {
+			points[i].draw(clickRadiusSquared);
+		}
+	}
+};
+
 class ofApp : public ofBaseApp {
 public:
-	vector<Tag> p;
+	DraggablePoints points;
 	
 	void setup() {
-		p.resize(12);
-		for(int i = 0; i < p.size(); i++) {
-			p[i].setPosition(ofVec2f(ofRandomWidth(), ofRandomHeight()));
-			p[i].setClickRadius(64);
-			p[i].enableControlEvents();
-			p[i].enableDrawEvent();
+		points.enableControlEvents();
+		points.enableDrawEvent();
+		points.setClickRadius(64);
+		for(int i = 0; i < 12; i++) {
+			points.add(ofVec2f(ofRandomWidth(), ofRandomHeight()));
 		}
 	}
 	void update() {
