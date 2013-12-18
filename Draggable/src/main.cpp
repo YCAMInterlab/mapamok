@@ -38,12 +38,17 @@ public:
 		this->position = position;
 	}
 	void mousePressed(ofMouseEventArgs& mouse) {
-		if(mouse.button == OF_MOUSE_BUTTON_LEFT && isHit(mouse)) {
-			dragging = true;
-			mouseStart = mouse;
-			positionStart = position;
+		if(mouse.button == OF_MOUSE_BUTTON_LEFT) {
+			if(isHit(mouse)) {
+				dragging = true;
+				selected = true;
+				mouseStart = mouse;
+				positionStart = position;
+			} else {
+				dragging = false;
+				selected = false;
+			}
 		}
-		selected = false;
 	}
 	void mouseMoved(ofMouseEventArgs& mouse) {
 		if(dragging) {
@@ -57,10 +62,6 @@ public:
 	void mouseReleased(ofMouseEventArgs& mouse) {
 		if(mouse.button == OF_MOUSE_BUTTON_LEFT) {
 			dragging = false;
-		}
-		bool clicked = (mouse == mouseStart);
-		if(clicked) {
-			selected = !selected;
 		}
 	}
 	void keyPressed(ofKeyEventArgs& key) {
@@ -112,6 +113,9 @@ protected:
 		return distanceSquared < clickRadiusSquared;
 	}
 public:
+	DraggableCircle()
+	:clickRadiusSquared(100) {
+	}
 	void setClickRadius(float clickRadius = 10) {
 		this->clickRadiusSquared = clickRadius * clickRadius;
 	}
@@ -120,33 +124,37 @@ public:
 class Tag : public DraggableCircle {
 public:
 	void draw(ofEventArgs& args) {
+		float r = sqrt(clickRadiusSquared);
 		ofPushStyle();
 		ofNoFill();
 		ofSetLineWidth(2);
 		if(selected) {
 			ofSetColor(ofColor::yellow);
-			ofCircle(position, 14);
+			ofCircle(position, r + 4);
 		}
 		if(dragging) {
 			ofSetColor(ofColor::red);
-			ofCircle(position, 12);
+			ofCircle(position, r + 2);
 		}
 		ofFill();
 		ofSetColor(ofColor::white);
-		ofCircle(position, 10);
+		ofCircle(position, r);
 		ofPopStyle();
 	}
 };
 
 class ofApp : public ofBaseApp {
 public:
-	Tag p;
+	vector<Tag> p;
 	
 	void setup() {
-		p.setPosition(ofVec2f(200, 200));
-		p.setClickRadius(10);
-		p.enableControlEvents();
-		p.enableDrawEvent();
+		p.resize(12);
+		for(int i = 0; i < p.size(); i++) {
+			p[i].setPosition(ofVec2f(ofRandomWidth(), ofRandomHeight()));
+			p[i].setClickRadius(64);
+			p[i].enableControlEvents();
+			p[i].enableDrawEvent();
+		}
 	}
 	void update() {
 		
