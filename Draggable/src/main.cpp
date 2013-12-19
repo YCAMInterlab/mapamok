@@ -83,16 +83,15 @@ public:
 	}
 };
 
-class DraggablePoints : public EventWatcher {
+class SelectablePoints : public EventWatcher {
 protected:
 	vector<DraggablePoint> points;
 	set<unsigned int> selected;
 	
-	ofVec2f mouseStart, positionStart;
 	float pointSize, clickRadiusSquared;
 	
 public:
-	DraggablePoints()
+	SelectablePoints()
 	:clickRadiusSquared(0) {
 	}
 	unsigned int size() {
@@ -119,6 +118,27 @@ public:
 				selected.erase(i);
 			}
 		}
+	}
+	void draw(ofEventArgs& args) {
+		for(int i = 0; i < size(); i++) {
+			points[i].draw(clickRadiusSquared);
+		}
+	}
+};
+
+class DraggablePoints : public SelectablePoints {
+protected:
+	ofVec2f mouseStart;
+	
+	void cachePositions() {
+		for(set<unsigned int>::iterator itr = selected.begin(); itr != selected.end(); itr++) {
+			points[*itr].positionStart = points[*itr].position;
+		}
+	}
+	
+public:
+	void mousePressed(ofMouseEventArgs& mouse) {
+		SelectablePoints::mousePressed(mouse);
 		mouseStart = mouse;
 		cachePositions();
 	}
@@ -140,21 +160,11 @@ public:
 			}
 		}
 	}
-	void cachePositions() {
-		for(set<unsigned int>::iterator itr = selected.begin(); itr != selected.end(); itr++) {
-			points[*itr].positionStart = points[*itr].position;
-		}
-	}
-	void draw(ofEventArgs& args) {
-		for(int i = 0; i < size(); i++) {
-			points[i].draw(clickRadiusSquared);
-		}
-	}
 };
 
 class ofApp : public ofBaseApp {
 public:
-	DraggablePoints points;
+	SelectablePoints points;
 	
 	void setup() {
 		points.enableControlEvents();
