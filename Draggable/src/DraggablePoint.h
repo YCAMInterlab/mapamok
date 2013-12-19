@@ -21,12 +21,9 @@ public:
 			ofSetColor(ofColor::yellow);
 			ofCircle(position, r + 4);
 		}
-		if(dragging) {
-			ofSetColor(ofColor::red);
-			ofCircle(position, r + 2);
-		}
+		ofPopStyle();
+		ofPushStyle();
 		ofFill();
-		ofSetColor(ofColor::white);
 		ofCircle(position, r);
 		ofPopStyle();
 	}

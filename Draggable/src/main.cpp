@@ -2,20 +2,41 @@
 
 #include "DraggablePoints.h"
 
+class WhitePoints : public SelectablePoints {
+public:
+	void draw(ofEventArgs& args) {
+		ofSetColor(ofColor::white);
+		SelectablePoints::draw(args);
+	}
+};
+
+class GrayPoints : public DraggablePoints {
+public:
+	void draw(ofEventArgs& args) {
+		ofSetColor(ofColor::gray);
+		DraggablePoints::draw(args);
+	}
+};
+
 class ofApp : public ofBaseApp {
 public:
-	SelectablePoints points;
+	WhitePoints whitePoints;
+	GrayPoints grayPoints;
 	
 	void setup() {
-		points.enableControlEvents();
-		points.enableDrawEvent();
-		points.setClickRadius(64);
+		whitePoints.setClickRadius(32);
 		for(int i = 0; i < 12; i++) {
-			points.add(ofVec2f(ofRandomWidth(), ofRandomHeight()));
+			whitePoints.add(ofVec2f(ofRandomWidth(), ofRandomHeight()));
 		}
-	}
-	void update() {
+		whitePoints.enableControlEvents();
+		whitePoints.enableDrawEvent();
 		
+		grayPoints.setClickRadius(24);
+		for(int i = 0; i < 12; i++) {
+			grayPoints.add(ofVec2f(ofRandomWidth(), ofRandomHeight()));
+		}
+		grayPoints.enableControlEvents();
+		grayPoints.enableDrawEvent();
 	}
 	void draw() {
 		ofBackground(0);
