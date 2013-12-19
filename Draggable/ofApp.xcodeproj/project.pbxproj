@@ -63,10 +63,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		2710863E1863A3EC00509AE4 /* EventWatcher.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EventWatcher.h; sourceTree = "<group>"; };
-		2710863F1863A45D00509AE4 /* DraggablePoint.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DraggablePoint.h; sourceTree = "<group>"; };
-		271086401863A4B700509AE4 /* SelectablePoints.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SelectablePoints.h; sourceTree = "<group>"; };
-		271086411863A4E400509AE4 /* DraggablePoints.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DraggablePoints.h; sourceTree = "<group>"; };
+		271086431863A6A800509AE4 /* DraggablePoint.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DraggablePoint.h; sourceTree = "<group>"; };
+		271086441863A6A800509AE4 /* DraggablePoints.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DraggablePoints.h; sourceTree = "<group>"; };
+		271086451863A6A800509AE4 /* EventWatcher.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EventWatcher.h; sourceTree = "<group>"; };
+		271086461863A6A800509AE4 /* SelectablePoints.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SelectablePoints.h; sourceTree = "<group>"; };
 		27F1B17918318DCE006B1568 /* ofxUI.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ofxUI.h; sourceTree = "<group>"; };
 		27F1B17A18318DCE006B1568 /* ofxUI2DGraph.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ofxUI2DGraph.h; sourceTree = "<group>"; };
 		27F1B17B18318DCE006B1568 /* ofxUI2DPad.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ofxUI2DPad.h; sourceTree = "<group>"; };
@@ -169,6 +169,18 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		271086421863A6A800509AE4 /* SharedCode */ = {
+			isa = PBXGroup;
+			children = (
+				271086431863A6A800509AE4 /* DraggablePoint.h */,
+				271086441863A6A800509AE4 /* DraggablePoints.h */,
+				271086451863A6A800509AE4 /* EventWatcher.h */,
+				271086461863A6A800509AE4 /* SelectablePoints.h */,
+			);
+			name = SharedCode;
+			path = ../../SharedCode;
+			sourceTree = "<group>";
+		};
 		27F1AF9518318DCA006B1568 /* ofxUI */ = {
 			isa = PBXGroup;
 			children = (
@@ -331,11 +343,8 @@
 		E4B69E1C0A3A1BDC003C02F2 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				271086421863A6A800509AE4 /* SharedCode */,
 				E4B69E1D0A3A1BDC003C02F2 /* main.cpp */,
-				2710863E1863A3EC00509AE4 /* EventWatcher.h */,
-				2710863F1863A45D00509AE4 /* DraggablePoint.h */,
-				271086401863A4B700509AE4 /* SelectablePoints.h */,
-				271086411863A4E400509AE4 /* DraggablePoints.h */,
 			);
 			path = src;
 			sourceTree = SOURCE_ROOT;
