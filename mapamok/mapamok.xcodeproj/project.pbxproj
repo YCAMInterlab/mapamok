@@ -147,6 +147,7 @@
 		2710864B1863A94000509AE4 /* DraggablePoints.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DraggablePoints.h; sourceTree = "<group>"; };
 		2710864C1863A94000509AE4 /* EventWatcher.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EventWatcher.h; sourceTree = "<group>"; };
 		2710864D1863A94000509AE4 /* SelectablePoints.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SelectablePoints.h; sourceTree = "<group>"; };
+		2710864F1863D6C000509AE4 /* MeshUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MeshUtils.h; sourceTree = "<group>"; };
 		28904A3F685CCE2D22B588E9 /* aiVector2D.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = aiVector2D.h; path = ../../../addons/ofxAssimpModelLoader/libs/assimp/include/aiVector2D.h; sourceTree = SOURCE_ROOT; };
 		29897723D8C99BC3F4C66556 /* guiTypeFileLister.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = guiTypeFileLister.h; path = ../../../addons/ofxControlPanel/src/guiTypeFileLister.h; sourceTree = SOURCE_ROOT; };
 		2B40EDA85BEB63E46785BC29 /* tinyxml.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 30; name = tinyxml.cpp; path = ../../../addons/ofxXmlSettings/libs/tinyxml.cpp; sourceTree = SOURCE_ROOT; };
@@ -555,6 +556,7 @@
 		271086491863A94000509AE4 /* SharedCode */ = {
 			isa = PBXGroup;
 			children = (
+				2710864F1863D6C000509AE4 /* MeshUtils.h */,
 				2710864A1863A94000509AE4 /* DraggablePoint.h */,
 				2710864B1863A94000509AE4 /* DraggablePoints.h */,
 				2710864C1863A94000509AE4 /* EventWatcher.h */,

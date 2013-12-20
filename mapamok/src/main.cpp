@@ -1,7 +1,8 @@
 #include "ofMain.h"
-
+#include "ofxAssimpModelLoader.h"
 #include "ofxUI.h"
 #include "DraggablePoints.h"
+#include "MeshUtils.h"
 
 class ofApp : public ofBaseApp {
 public:
@@ -11,11 +12,20 @@ public:
 	bool editToggle = true;
 	bool loadButton = false;
 	bool saveButton = false;
-	float brightness = 0;
+	float backgroundBrightness = 0;
 	bool useShader = false;
 	
+	ofxAssimpModelLoader model;
+	ofMesh mesh;
+	ofEasyCam cam;
+	SelectablePoints objectPoints;
+		
 	void setup() {
+		ofSetWindowTitle("mapamok");
 		setupGui();
+		if(ofFile::doesFileExist("model.dae")) {
+			loadModel("model.dae");
+		}
 	}
 	void setupGui() {
 		gui = new ofxUICanvas();
@@ -29,18 +39,12 @@ public:
 		cp(96, 192),
 		cpo(255, 192);
 		gui->setUIColors(cb, co, coh, cf, cfh, cp, cpo);
-		gui->addLabel("mapamok", OFX_UI_FONT_SMALL);
-		
+				
 		gui->addSpacer();
 		gui->addLabel("Calibration");
 		gui->addToggle("Edit", &editToggle);
 		gui->addButton("Load", &loadButton);
 		gui->addButton("Save", &saveButton);
-		
-		gui->addSpacer();
-		gui->addLabel("Drawing");
-		gui->addMinimalSlider("Background", 0, 1, &brightness);
-		gui->addToggle("Use shader", &useShader);
 		
 		gui->addSpacer();
 		gui->addLabel("Render");
@@ -52,10 +56,30 @@ public:
 		renderMode = gui->addRadio("Render", renderModes, OFX_UI_ORIENTATION_VERTICAL, OFX_UI_FONT_MEDIUM);
 		renderMode->activateToggle(renderModes[0]);
 		
+		gui->addSpacer();
+		gui->addMinimalSlider("Background", 0, 255, &backgroundBrightness);
+		gui->addToggle("Use shader", &useShader);
+		
 		gui->autoSizeToFitWidgets();
 	}
 	void draw() {
-		ofBackground(0);
+		ofBackground(backgroundBrightness);
+		cam.begin();
+		float scaleFactor = MIN(ofGetWidth(), ofGetHeight());
+		ofScale(scaleFactor, scaleFactor, scaleFactor);
+		mesh.drawWireframe();
+		cam.end();
+	}
+	void loadModel(string filename) {
+		model.loadModel(filename);
+		mesh = model.getMesh(0);
+		centerAndNormalize(mesh);
+	}
+	void dragEvent(ofDragInfo dragInfo) {
+		if(dragInfo.files.size() == 1) {
+			string filename = dragInfo.files[0];
+			loadModel(filename);
+		}
 	}
 };
 
