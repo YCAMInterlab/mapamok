@@ -32,3 +32,16 @@ void centerAndNormalize(ofMesh& mesh) {
 		vertices[i] *= scale;
 	}
 }
+
+void project(ofMesh& mesh, const ofCamera& camera, ofRectangle viewport) {
+	ofMatrix4x4 modelViewProjectionMatrix = camera.getModelViewProjectionMatrix(viewport);
+	viewport.width /= 2;
+	viewport.height /= 2;
+	for(int i = 0; i < mesh.getNumVertices(); i++) {
+		ofVec3f& cur = mesh.getVerticesPointer()[i];
+		ofVec3f CameraXYZ = cur * modelViewProjectionMatrix;
+		cur.x = (CameraXYZ.x + 1.0f) * viewport.width + viewport.x;
+		cur.y = (1.0f - CameraXYZ.y) * viewport.height + viewport.y;
+		cur.z = 0;
+	}
+}

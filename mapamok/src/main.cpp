@@ -16,7 +16,7 @@ public:
 	bool useShader = false;
 	
 	ofxAssimpModelLoader model;
-	ofMesh mesh;
+	ofMesh mesh, imageMesh;
 	ofEasyCam cam;
 	SelectablePoints objectPoints;
 		
@@ -26,6 +26,9 @@ public:
 		if(ofFile::doesFileExist("model.dae")) {
 			loadModel("model.dae");
 		}
+		cam.setDistance(1);
+		cam.setNearClip(.001);
+		cam.setFarClip(100);
 	}
 	void setupGui() {
 		gui = new ofxUICanvas();
@@ -65,10 +68,16 @@ public:
 	void draw() {
 		ofBackground(backgroundBrightness);
 		cam.begin();
-		float scaleFactor = MIN(ofGetWidth(), ofGetHeight());
-		ofScale(scaleFactor, scaleFactor, scaleFactor);
+		ofSetColor(128);
 		mesh.drawWireframe();
 		cam.end();
+		
+		imageMesh = mesh;
+		project(imageMesh, cam, ofGetWindowRect());
+		glPointSize(4);
+		imageMesh.setMode(OF_PRIMITIVE_POINTS);
+		ofSetColor(255, 0, 0);
+		imageMesh.draw();
 	}
 	void loadModel(string filename) {
 		model.loadModel(filename);
