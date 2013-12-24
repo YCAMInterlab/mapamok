@@ -27,9 +27,15 @@ public:
 			loadModel("model.dae");
 		}
 		cam.setDistance(1);
-		cam.setNearClip(.001);
-		cam.setFarClip(100);
+		cam.setNearClip(.1);
+		cam.setFarClip(10);
 	}
+	enum {
+		RENDER_MODE_WIREFRAME_OCCLUDED = 0,
+		RENDER_MODE_WIREFRAME_FULL,
+		RENDER_MODE_OUTLINE,
+		RENDER_MODE_FACES,
+	};
 	void setupGui() {
 		gui = new ofxUICanvas();
 		
@@ -52,9 +58,9 @@ public:
 		gui->addSpacer();
 		gui->addLabel("Render");
 		vector<string> renderModes;
-		renderModes.push_back("Outline");
 		renderModes.push_back("Occluded wireframe");
 		renderModes.push_back("Full wireframe");
+		renderModes.push_back("Depth Edges");
 		renderModes.push_back("Faces");
 		renderMode = gui->addRadio("Render", renderModes, OFX_UI_ORIENTATION_VERTICAL, OFX_UI_FONT_MEDIUM);
 		renderMode->activateToggle(renderModes[0]);
@@ -65,23 +71,54 @@ public:
 		
 		gui->autoSizeToFitWidgets();
 	}
+	int getSelection(ofxUIRadio* radio) {
+		vector<ofxUIToggle*> toggles = radio->getToggles();
+		for(int i = 0; i < toggles.size(); i++) {
+			if(toggles[i]->getValue()) {
+				return i;
+			}
+		}
+		return -1;
+	}
 	void draw() {
 		ofBackground(backgroundBrightness);
+		ofSetColor(255);
+		
 		cam.begin();
-		ofSetColor(128);
-		mesh.drawWireframe();
+		ofSetLineWidth(2);
+		int renderModeSelection = getSelection(renderMode);
+		if(renderModeSelection == RENDER_MODE_FACES) {
+			mesh.drawFaces();
+		} else if(renderModeSelection == RENDER_MODE_OUTLINE || renderModeSelection == RENDER_MODE_WIREFRAME_OCCLUDED) {
+			prepareRender(true, true, false);
+			glEnable(GL_POLYGON_OFFSET_FILL);
+			float lineWidth = ofGetStyle().lineWidth;
+			if(renderModeSelection == RENDER_MODE_OUTLINE) {
+				glPolygonOffset(-lineWidth, -lineWidth);
+			} else if(renderModeSelection == RENDER_MODE_WIREFRAME_OCCLUDED) {
+				glPolygonOffset(+lineWidth, +lineWidth);
+			}
+			glColorMask(false, false, false, false);
+			mesh.drawFaces();
+			glColorMask(true, true, true, true);
+			glDisable(GL_POLYGON_OFFSET_FILL);
+			mesh.drawWireframe();
+			prepareRender(false, false, false);
+		} else if(renderModeSelection == RENDER_MODE_WIREFRAME_FULL) {
+			mesh.drawWireframe();
+		}
 		cam.end();
 		
 		imageMesh = mesh;
 		project(imageMesh, cam, ofGetWindowRect());
 		glPointSize(4);
 		imageMesh.setMode(OF_PRIMITIVE_POINTS);
-		ofSetColor(255, 0, 0);
+		ofSetColor(ofColor::blue);
 		imageMesh.draw();
 	}
 	void loadModel(string filename) {
 		model.loadModel(filename);
-		mesh = model.getMesh(0);
+		mesh = collapseModel(model);
 		centerAndNormalize(mesh);
 	}
 	void dragEvent(ofDragInfo dragInfo) {

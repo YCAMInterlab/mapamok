@@ -45,3 +45,49 @@ void project(ofMesh& mesh, const ofCamera& camera, ofRectangle viewport) {
 		cur.z = 0;
 	}
 }
+
+void rotateToNormal(ofVec3f normal) {
+	normal.normalize();
+	float rotationAmount;
+	ofVec3f rotationAngle;
+	ofQuaternion rotation;
+	ofVec3f axis(0, 0, 1);
+	rotation.makeRotate(axis, normal);
+	rotation.getRotate(rotationAmount, rotationAngle);
+	ofRotate(rotationAmount, rotationAngle.x, rotationAngle.y, rotationAngle.z);
+}
+
+void drawNormals(const ofMesh& mesh, float normalLength) {
+	for(int i = 0; i < mesh.getNumNormals(); i++) {
+		const ofVec3f& start = mesh.getVertices()[i];
+		const ofVec3f& normal = mesh.getNormals()[i];
+		ofVec3f end = start + normal * normalLength;
+		ofLine(start, end);
+	}
+}
+
+ofMesh collapseModel(ofxAssimpModelLoader model) {
+	ofMesh mesh;
+//	cout << "collapsing " << model.getNumMeshes() << endl;
+	for(int i = 0; i < model.getNumMeshes(); i++) {
+		ofMesh curMesh = model.getMesh(i);
+		mesh.append(curMesh);
+	}
+	return mesh;
+}
+
+void prepareRender(bool useDepthTesting, bool useBackFaceCulling, bool useFrontFaceCulling) {
+	ofSetDepthTest(useDepthTesting);
+	if(useBackFaceCulling || useFrontFaceCulling) {
+		glEnable(GL_CULL_FACE);
+		if(useBackFaceCulling && useFrontFaceCulling) {
+			glCullFace(GL_FRONT_AND_BACK);
+		} else if(useBackFaceCulling) {
+			glCullFace(GL_BACK);
+		} else if(useFrontFaceCulling) {
+			glCullFace(GL_FRONT);
+		}
+	} else {
+		glDisable(GL_CULL_FACE);
+	}
+}
