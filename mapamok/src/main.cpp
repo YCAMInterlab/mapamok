@@ -16,7 +16,8 @@ public:
 	bool useShader = false;
 	
 	ofxAssimpModelLoader model;
-	ofMesh mesh, imageMesh;
+	ofMesh mesh;
+	ofMesh cornerMesh, imageMesh;
 	ofEasyCam cam;
 	SelectablePoints objectPoints;
 		
@@ -88,7 +89,11 @@ public:
 		ofSetLineWidth(2);
 		int renderModeSelection = getSelection(renderMode);
 		if(renderModeSelection == RENDER_MODE_FACES) {
+			ofEnableDepthTest();
 			mesh.drawFaces();
+			ofDisableDepthTest();
+		} else if(renderModeSelection == RENDER_MODE_WIREFRAME_FULL) {
+			mesh.drawWireframe();
 		} else if(renderModeSelection == RENDER_MODE_OUTLINE || renderModeSelection == RENDER_MODE_WIREFRAME_OCCLUDED) {
 			prepareRender(true, true, false);
 			glEnable(GL_POLYGON_OFFSET_FILL);
@@ -104,22 +109,36 @@ public:
 			glDisable(GL_POLYGON_OFFSET_FILL);
 			mesh.drawWireframe();
 			prepareRender(false, false, false);
-		} else if(renderModeSelection == RENDER_MODE_WIREFRAME_FULL) {
-			mesh.drawWireframe();
 		}
+		
+		ofEnableDepthTest();
+		float pointSize = 4;
+		glPointSize(pointSize);
+		ofSetColor(ofColor::red);
+		glEnable(GL_POLYGON_OFFSET_POINT);
+		glPolygonOffset(-pointSize, -pointSize);
+		cornerMesh.drawVertices();
+		glDisable(GL_POLYGON_OFFSET_POINT);
+		ofDisableDepthTest();
+		
 		cam.end();
 		
 		imageMesh = mesh;
 		project(imageMesh, cam, ofGetWindowRect());
-		glPointSize(4);
 		imageMesh.setMode(OF_PRIMITIVE_POINTS);
-		ofSetColor(ofColor::blue);
-		imageMesh.draw();
+		ofEnableDepthTest();
+//		imageMesh.draw();
+		ofDisableDepthTest();
 	}
 	void loadModel(string filename) {
 		model.loadModel(filename);
 		mesh = collapseModel(model);
 		centerAndNormalize(mesh);
+		
+		cornerMesh = mesh;
+		cornerMesh.clearIndices();
+		cornerMesh.setMode(OF_PRIMITIVE_POINTS);
+		cornerMesh.addIndices(getCornerVertices(mesh));
 	}
 	void dragEvent(ofDragInfo dragInfo) {
 		if(dragInfo.files.size() == 1) {
