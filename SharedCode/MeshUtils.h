@@ -83,6 +83,12 @@ ofVec3f getEdgeVector(const ofMesh& mesh, const Edge& edge) {
 	return getVector(mesh, edge.i0, edge.i1);
 }
 
+float getAngle(const ofMesh& mesh, int a, int center, int b) {
+	ofVec3f v0 = getVector(mesh, center, a);
+	ofVec3f v1 = getVector(mesh, center, b);
+	return v0.angle(v1);
+}
+
 float getMaximumAngle(const ofMesh& mesh, const vector<Edge>& edges) {
 	float maximumAngle = 0;
 	for(int i = 0; i < edges.size(); i++) {
@@ -159,38 +165,51 @@ vector<Edge> getEdgesFromVertex(const ofMesh& mesh, unsigned int index) {
 	return edges;
 }
 
-// needs testing
-vector<Face> getFacesFromVertex(const ofMesh& mesh, unsigned int index) {
-	set<Face> uniqueFaces;
+vector<Face> getAllFaces(const ofMesh& mesh) {
+	vector<Face> faces;
 	int n = mesh.getNumIndices();
 	for(int i = 0; i < n;) {
 		int i0 = mesh.getIndex(i++);
 		int i1 = mesh.getIndex(i++);
 		int i2 = mesh.getIndex(i++);
-		uniqueFaces.insert(Face(i0, i1, i2));
+		faces.push_back(Face(i0, i1, i2));
 	}
-	vector<Face> faces;
-	faces.assign(uniqueFaces.begin(), uniqueFaces.end());
 	return faces;
 }
 
-vector<Face> getFacesFromEdge(const ofMesh& mesh, const Edge& edge) {
-	vector<Face> faces;
-	// todo
-	return faces;
+template <class T>
+vector<unsigned int> getSortedIndices(const vector<T>& v) {
+	vector< pair<T, unsigned int> > sorted(v.size());
+	for(unsigned int i = 0; i < v.size(); i++) {
+		sorted[i].first = v[i];
+		sorted[i].second = i;
+	}
+	ofSort(sorted);
+	vector<unsigned int> indices(v.size());
+	for(unsigned int i = 0; i < sorted.size(); i++) {
+		indices[i] = sorted[i].second;
+	}
+	return indices;
 }
 
-vector<unsigned int> getCornerVertices(const ofMesh& mesh, float maximumAngle = 180) {
-	vector<unsigned int> corners;
-	vector< vector<Edge> > edgesForVertices = getAllEdgesForVertices(mesh);
-	for(int i = 0; i < edgesForVertices.size(); i++) {
-		const vector<Edge>& edges = edgesForVertices[i];
-		cout << getMaximumAngle(mesh, edges) << endl;
-		if(getMaximumAngle(mesh, edges) < maximumAngle) {
-			corners.push_back(i);
-		}
+vector<float> getAngleSums(const ofMesh& mesh) {
+	vector<float> angleSums(mesh.getNumVertices());
+	vector<Face> faces = getAllFaces(mesh);
+	for(int i = 0; i < faces.size(); i++) {
+		Face& face = faces[i];
+		angleSums[face.i0] += getAngle(mesh, face.i2, face.i0, face.i1);
+		angleSums[face.i1] += getAngle(mesh, face.i0, face.i1, face.i2);
+		angleSums[face.i2] += getAngle(mesh, face.i1, face.i2, face.i0);
 	}
-	return corners;
+	return angleSums;
+}
+
+vector<unsigned int> getRankedCorners(const ofMesh& mesh) {
+	vector<float> angleSums = getAngleSums(mesh);
+	for(int i = 0; i < angleSums.size(); i++) {
+		angleSums[i] = fabsf(angleSums[i] - 360);
+	}
+	return getSortedIndices(angleSums);
 }
 
 void getBoundingBox(const ofMesh& mesh, ofVec3f& cornerMin, ofVec3f& cornerMax) {
@@ -250,7 +269,6 @@ void drawNormals(const ofMesh& mesh, float normalLength) {
 
 ofMesh collapseModel(ofxAssimpModelLoader model) {
 	ofMesh mesh;
-	//	cout << "collapsing " << model.getNumMeshes() << endl;
 	for(int i = 0; i < model.getNumMeshes(); i++) {
 		ofMesh curMesh = model.getMesh(i);
 		mesh.append(curMesh);
