@@ -184,6 +184,7 @@ vector<unsigned int> getSortedIndices(const vector<T>& v) {
 		sorted[i].first = v[i];
 		sorted[i].second = i;
 	}
+    vector< pair<T, unsigned int> > beforeSorting = sorted;
 	ofSort(sorted);
 	vector<unsigned int> indices(v.size());
 	for(unsigned int i = 0; i < sorted.size(); i++) {
@@ -207,9 +208,57 @@ vector<float> getAngleSums(const ofMesh& mesh) {
 vector<unsigned int> getRankedCorners(const ofMesh& mesh) {
 	vector<float> angleSums = getAngleSums(mesh);
 	for(int i = 0; i < angleSums.size(); i++) {
-		angleSums[i] = fabsf(angleSums[i] - 360);
+        // angleSums should be 360 for flat surfaces
+        // clear corners / end points have less than 360
+        // wrinkly saddles have more than 360
+        // this transforms both to being 0 for flat
+        // and negative / small for non-flat
+		angleSums[i] = -fabsf(angleSums[i] - 360);
 	}
 	return getSortedIndices(angleSums);
+}
+
+int findNearestVertex(const vector<ofVec3f>& vertices, const ofVec3f& base) {
+    int nearestIndex = 0;
+    float nearestDistance = 0;
+    int n = vertices.size();
+    for(int i = 0; i < n; i++) {
+        float distance = base.distance(vertices[i]);
+        if(i == 0 || distance < nearestDistance) {
+            nearestDistance = distance;
+            nearestIndex = i;
+        }
+    }
+    return nearestIndex;
+}
+
+// assumes mesh is indexed
+// drops all normals, colors, and tex coords
+ofMesh mergeNearbyVertices(ofMesh& mesh, float tolerance = 1) {
+    ofMesh mergedMesh;
+    int n = mesh.getNumVertices();
+    vector<int> remappedIndices;
+    for(int i = 0; i < n; i++) {
+        const ofVec3f& cur = mesh.getVertices()[i];
+        if(mergedMesh.getNumVertices() > 0) {
+            int nearestIndex = findNearestVertex(mergedMesh.getVertices(), cur);
+            const ofVec3f& nearestVertex = mergedMesh.getVertices()[nearestIndex];
+            if(cur.distance(nearestVertex) < tolerance) {
+                remappedIndices.push_back(nearestIndex);
+            } else {
+                remappedIndices.push_back(mergedMesh.getNumVertices());
+                mergedMesh.addVertex(cur);
+            }
+        } else {
+            remappedIndices.push_back(0);
+            mergedMesh.addVertex(cur);
+        }
+    }
+    n = mesh.getNumIndices();
+    for(int i = 0; i < n; i++) {
+        mergedMesh.addIndex(remappedIndices[mesh.getIndex(i)]);
+    }
+    return mergedMesh;
 }
 
 void getBoundingBox(const ofMesh& mesh, ofVec3f& cornerMin, ofVec3f& cornerMax) {
@@ -243,6 +292,18 @@ void centerAndNormalize(ofMesh& mesh) {
 		vertices[i] += translate;
 		vertices[i] *= scale;
 	}
+}
+
+ofVec3f randomVec3f(float range) {
+    return ofVec3f(ofRandom(-range, range), ofRandom(-range, range), ofRandom(-range, range));
+}
+
+void addJitter(ofMesh& mesh, float range) {
+	vector<ofVec3f>& vertices = mesh.getVertices();
+    int n = vertices.size();
+    for(int i = 0; i < n; i++) {
+        vertices[i] += randomVec3f(range);
+    }
 }
 
 void project(ofMesh& mesh, const ofCamera& camera, ofRectangle viewport) {

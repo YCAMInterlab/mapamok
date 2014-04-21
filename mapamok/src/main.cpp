@@ -1,6 +1,14 @@
+/*
+ Mapamaok app. This should only handle the things that are present regardless of how many copies of Mapamok
+ you're running. For example: definitely background color, calibration is more complex.
+ */
+
 #include "ofMain.h"
+#include "ofAppGLFWWindow.h"
 #include "ofxAssimpModelLoader.h"
 #include "ofxUI.h"
+
+#include "Mapamok.h"
 #include "DraggablePoints.h"
 #include "MeshUtils.h"
 
@@ -8,6 +16,8 @@ class ofApp : public ofBaseApp {
 public:
 	ofxUICanvas* gui;
 	ofxUIRadio* renderMode;
+    
+    Mapamok mapamok;
 	
 	bool editToggle = true;
 	bool loadButton = false;
@@ -26,7 +36,9 @@ public:
 		setupGui();
 		if(ofFile::doesFileExist("model.dae")) {
 			loadModel("model.dae");
-		}
+		} else if(ofFile::doesFileExist("model.3ds")) {
+            loadModel("model.3ds");
+        }
 		cam.setDistance(1);
 		cam.setNearClip(.1);
 		cam.setFarClip(10);
@@ -84,6 +96,11 @@ public:
 	void draw() {
 		ofBackground(backgroundBrightness);
 		ofSetColor(255);
+        
+		cornerMesh.clearIndices();
+        vector<unsigned int> cornerIndices = getRankedCorners(mesh);
+        cornerIndices.resize(ofMap(mouseX, 0, ofGetWidth(), 0, cornerIndices.size(), true));
+		cornerMesh.addIndices(cornerIndices);
 		
 		cam.begin();
 		ofSetLineWidth(2);
@@ -112,7 +129,7 @@ public:
 		}
 		
 		ofEnableDepthTest();
-		float pointSize = 4;
+		float pointSize = 8;
 		glPointSize(pointSize);
 		ofSetColor(ofColor::red);
 		glEnable(GL_POLYGON_OFFSET_POINT);
@@ -134,11 +151,11 @@ public:
 		model.loadModel(filename);
 		mesh = collapseModel(model);
 		centerAndNormalize(mesh);
+        mesh = mergeNearbyVertices(mesh, .001);
+        addJitter(mesh, 0.02);
 		
 		cornerMesh = mesh;
-		cornerMesh.clearIndices();
 		cornerMesh.setMode(OF_PRIMITIVE_POINTS);
-		cornerMesh.addIndices(getCornerVertices(mesh));
 	}
 	void dragEvent(ofDragInfo dragInfo) {
 		if(dragInfo.files.size() == 1) {
@@ -146,9 +163,15 @@ public:
 			loadModel(filename);
 		}
 	}
+    void keyPressed(int key) {
+        if(key == 'f') {
+            ofToggleFullscreen();
+        }
+    }
 };
 
 int main() {
-	ofSetupOpenGL(1280, 720, OF_WINDOW);
+    ofAppGLFWWindow window;
+	ofSetupOpenGL(&window, 1280, 720, OF_WINDOW);
 	ofRunApp(new ofApp());
 }
