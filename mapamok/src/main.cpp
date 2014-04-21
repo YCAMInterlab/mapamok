@@ -27,7 +27,7 @@ public:
 	
 	ofxAssimpModelLoader model;
 	ofMesh mesh;
-	ofMesh cornerMesh, imageMesh;
+	ofMesh mergedMesh, cornerMesh, imageMesh;
 	ofEasyCam cam;
 	SelectablePoints objectPoints;
 		
@@ -98,7 +98,7 @@ public:
 		ofSetColor(255);
         
 		cornerMesh.clearIndices();
-        vector<unsigned int> cornerIndices = getRankedCorners(mesh);
+        vector<unsigned int> cornerIndices = getRankedCorners(mergedMesh);
         cornerIndices.resize(ofMap(mouseX, 0, ofGetWidth(), 0, cornerIndices.size(), true));
 		cornerMesh.addIndices(cornerIndices);
 		
@@ -151,11 +151,10 @@ public:
 		model.loadModel(filename);
 		mesh = collapseModel(model);
 		centerAndNormalize(mesh);
-        mesh = mergeNearbyVertices(mesh, .001);
-        addJitter(mesh, 0.02);
-		
-		cornerMesh = mesh;
-		cornerMesh.setMode(OF_PRIMITIVE_POINTS);
+        
+        mergedMesh = mergeNearbyVertices(mesh, .001);
+		mergedMesh.setMode(OF_PRIMITIVE_POINTS);
+        cornerMesh = mergedMesh;
 	}
 	void dragEvent(ofDragInfo dragInfo) {
 		if(dragInfo.files.size() == 1) {
