@@ -18,6 +18,9 @@ public:
 	ofxUIRadio* renderMode;
     
     Mapamok mapamok;
+    
+    const float cornerAmount = .05;
+    const float mergeTolerance = .001;
 	
 	bool editToggle = true;
 	bool loadButton = false;
@@ -26,13 +29,14 @@ public:
 	bool useShader = false;
 	
 	ofxAssimpModelLoader model;
-	ofMesh mesh;
-	ofMesh mergedMesh, cornerMesh, imageMesh;
+	ofVboMesh mesh;
+	ofVboMesh mergedMesh, cornerMesh, imageMesh;
 	ofEasyCam cam;
 	SelectablePoints objectPoints;
 		
 	void setup() {
 		ofSetWindowTitle("mapamok");
+        ofSetVerticalSync(false);
 		setupGui();
 		if(ofFile::doesFileExist("model.dae")) {
 			loadModel("model.dae");
@@ -44,10 +48,10 @@ public:
 		cam.setFarClip(10);
 	}
 	enum {
-		RENDER_MODE_WIREFRAME_OCCLUDED = 0,
-		RENDER_MODE_WIREFRAME_FULL,
+		RENDER_MODE_FACES = 0,
 		RENDER_MODE_OUTLINE,
-		RENDER_MODE_FACES,
+		RENDER_MODE_WIREFRAME_FULL,
+		RENDER_MODE_WIREFRAME_OCCLUDED
 	};
 	void setupGui() {
 		gui = new ofxUICanvas();
@@ -71,10 +75,10 @@ public:
 		gui->addSpacer();
 		gui->addLabel("Render");
 		vector<string> renderModes;
-		renderModes.push_back("Occluded wireframe");
-		renderModes.push_back("Full wireframe");
-		renderModes.push_back("Depth Edges");
 		renderModes.push_back("Faces");
+		renderModes.push_back("Depth Edges");
+		renderModes.push_back("Full wireframe");
+		renderModes.push_back("Occluded wireframe");
 		renderMode = gui->addRadio("Render", renderModes, OFX_UI_ORIENTATION_VERTICAL, OFX_UI_FONT_MEDIUM);
 		renderMode->activateToggle(renderModes[0]);
 		
@@ -96,19 +100,20 @@ public:
 	void draw() {
 		ofBackground(backgroundBrightness);
 		ofSetColor(255);
-        
+		
 		cornerMesh.clearIndices();
         vector<unsigned int> cornerIndices = getRankedCorners(mergedMesh);
-        cornerIndices.resize(ofMap(mouseX, 0, ofGetWidth(), 0, cornerIndices.size(), true));
+        cornerIndices.resize(ofMap(mouseX, 0, ofGetWidth(), 0, cornerIndices.size(), true));//cornerAmount * cornerIndices.size());
 		cornerMesh.addIndices(cornerIndices);
-		
+        
 		cam.begin();
-		ofSetLineWidth(2);
+//		ofSetLineWidth(2);
 		int renderModeSelection = getSelection(renderMode);
 		if(renderModeSelection == RENDER_MODE_FACES) {
-			ofEnableDepthTest();
+//			ofEnableDepthTest();
+            ofSetColor(255, 128);
 			mesh.drawFaces();
-			ofDisableDepthTest();
+//			ofDisableDepthTest();
 		} else if(renderModeSelection == RENDER_MODE_WIREFRAME_FULL) {
 			mesh.drawWireframe();
 		} else if(renderModeSelection == RENDER_MODE_OUTLINE || renderModeSelection == RENDER_MODE_WIREFRAME_OCCLUDED) {
@@ -129,31 +134,44 @@ public:
 		}
 		
 		ofEnableDepthTest();
-		float pointSize = 8;
+		float pointSize = 4;
 		glPointSize(pointSize);
 		ofSetColor(ofColor::red);
 		glEnable(GL_POLYGON_OFFSET_POINT);
 		glPolygonOffset(-pointSize, -pointSize);
-		cornerMesh.drawVertices();
+		cornerMesh.draw();
 		glDisable(GL_POLYGON_OFFSET_POINT);
 		ofDisableDepthTest();
 		
 		cam.end();
 		
-		imageMesh = mesh;
-		project(imageMesh, cam, ofGetWindowRect());
-		imageMesh.setMode(OF_PRIMITIVE_POINTS);
+//		imageMesh = mesh;
+//		project(imageMesh, cam, ofGetWindowRect());
+//		imageMesh.setMode(OF_PRIMITIVE_POINTS);
 		ofEnableDepthTest();
 //		imageMesh.draw();
 		ofDisableDepthTest();
+        
+        ofSetColor(255);
+        ofDrawBitmapString(ofToString((int) ofGetFrameRate()), 10, ofGetHeight() - 40);
 	}
 	void loadModel(string filename) {
 		model.loadModel(filename);
 		mesh = collapseModel(model);
 		centerAndNormalize(mesh);
         
-        mergedMesh = mergeNearbyVertices(mesh, .001);
-		mergedMesh.setMode(OF_PRIMITIVE_POINTS);
+        ofFile file(filename);
+        string base = file.getBaseName();
+        string mergedFilename = base + "-merged.ply";
+        
+        if(ofFile(mergedFilename).exists()) {
+            mergedMesh.load(mergedFilename);
+        } else {
+            mergedMesh = mergeNearbyVertices(mesh, mergeTolerance);
+            mergedMesh.save(mergedFilename);
+        }
+        mergedMesh.setMode(OF_PRIMITIVE_POINTS);
+        
         cornerMesh = mergedMesh;
 	}
 	void dragEvent(ofDragInfo dragInfo) {
@@ -165,6 +183,9 @@ public:
     void keyPressed(int key) {
         if(key == 'f') {
             ofToggleFullscreen();
+        }
+        if(key == '\t') {
+            gui->toggleVisible();
         }
     }
 };

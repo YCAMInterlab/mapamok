@@ -223,7 +223,7 @@ int findNearestVertex(const vector<ofVec3f>& vertices, const ofVec3f& base) {
     float nearestDistance = 0;
     int n = vertices.size();
     for(int i = 0; i < n; i++) {
-        float distance = base.distance(vertices[i]);
+        float distance = base.squareDistance(vertices[i]);
         if(i == 0 || distance < nearestDistance) {
             nearestDistance = distance;
             nearestIndex = i;
@@ -232,18 +232,47 @@ int findNearestVertex(const vector<ofVec3f>& vertices, const ofVec3f& base) {
     return nearestIndex;
 }
 
+class PercentStatus {
+public:
+    int i, total, ticks;
+    int lastReport;
+    PercentStatus(int total, int ticks = 10)
+    :total(total)
+    ,ticks(ticks)
+    ,lastReport(0) {
+    }
+    bool update(int i) {
+        this->i = i;
+        if(i > lastReport + (total / ticks)) {
+            lastReport = i;
+            return true;
+        }
+        return false;
+    }
+    int getPercentage() {
+        return (100 * i) / total;
+    }
+};
+
 // assumes mesh is indexed
 // drops all normals, colors, and tex coords
-ofMesh mergeNearbyVertices(ofMesh& mesh, float tolerance = 1) {
+// this is slow due to repeated findNearestVertex
+// the faster approach would bin all the vertices
+ofMesh mergeNearbyVertices(ofMesh& mesh, float tolerance = 0) {
+    if(tolerance == 0) {
+        return mesh;
+    }
+    float squareTolerance = tolerance * tolerance;
     ofMesh mergedMesh;
     int n = mesh.getNumVertices();
+    PercentStatus status(n);
     vector<int> remappedIndices;
     for(int i = 0; i < n; i++) {
         const ofVec3f& cur = mesh.getVertices()[i];
         if(mergedMesh.getNumVertices() > 0) {
             int nearestIndex = findNearestVertex(mergedMesh.getVertices(), cur);
             const ofVec3f& nearestVertex = mergedMesh.getVertices()[nearestIndex];
-            if(cur.distance(nearestVertex) < tolerance) {
+            if(cur.squareDistance(nearestVertex) < squareTolerance) {
                 remappedIndices.push_back(nearestIndex);
             } else {
                 remappedIndices.push_back(mergedMesh.getNumVertices());
@@ -252,6 +281,9 @@ ofMesh mergeNearbyVertices(ofMesh& mesh, float tolerance = 1) {
         } else {
             remappedIndices.push_back(0);
             mergedMesh.addVertex(cur);
+        }
+        if(status.update(i)) {
+            ofLog() << status.getPercentage() << "%";
         }
     }
     n = mesh.getNumIndices();
