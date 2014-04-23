@@ -86,7 +86,10 @@ ofVec3f getEdgeVector(const ofMesh& mesh, const Edge& edge) {
 float getAngle(const ofMesh& mesh, int a, int center, int b) {
 	ofVec3f v0 = getVector(mesh, center, a);
 	ofVec3f v1 = getVector(mesh, center, b);
-	return v0.angle(v1);
+    if(a == center || a == b || center == b) {
+        return 0; // avoid NaN
+    }
+    return v0.angle(v1);
 }
 
 float getMaximumAngle(const ofMesh& mesh, const vector<Edge>& edges) {
@@ -172,22 +175,28 @@ vector<Face> getAllFaces(const ofMesh& mesh) {
 		int i0 = mesh.getIndex(i++);
 		int i1 = mesh.getIndex(i++);
 		int i2 = mesh.getIndex(i++);
-		faces.push_back(Face(i0, i1, i2));
+        // ignore faces that are just lines
+        if(i0 != i1 && i0 != i2 && i1 != i2) {
+            faces.push_back(Face(i0, i1, i2));
+        }
 	}
 	return faces;
 }
 
 template <class T>
 vector<unsigned int> getSortedIndices(const vector<T>& v) {
-	vector< pair<T, unsigned int> > sorted(v.size());
-	for(unsigned int i = 0; i < v.size(); i++) {
+    int n = v.size();
+	vector< pair<T, unsigned int> > sorted(n);
+	for(unsigned int i = 0; i < n; i++) {
 		sorted[i].first = v[i];
 		sorted[i].second = i;
+        if(v[i] != v[i]) {
+            ofLogError() << "potential memory corruption from sorting NaN";
+        }
 	}
-    vector< pair<T, unsigned int> > beforeSorting = sorted;
 	ofSort(sorted);
-	vector<unsigned int> indices(v.size());
-	for(unsigned int i = 0; i < sorted.size(); i++) {
+	vector<unsigned int> indices(n);
+	for(unsigned int i = 0; i < n; i++) {
 		indices[i] = sorted[i].second;
 	}
 	return indices;
@@ -213,6 +222,7 @@ vector<unsigned int> getRankedCorners(const ofMesh& mesh) {
         // wrinkly saddles have more than 360
         // this transforms both to being 0 for flat
         // and negative / small for non-flat
+        float before = angleSums[i];
 		angleSums[i] = -fabsf(angleSums[i] - 360);
 	}
 	return getSortedIndices(angleSums);
@@ -249,6 +259,11 @@ public:
         }
         return false;
     }
+    void updateAndLog(int i) {
+        if(update(i)) {
+            ofLog() << getPercentage() << "%";
+        }
+    }
     int getPercentage() {
         return (100 * i) / total;
     }
@@ -258,7 +273,7 @@ public:
 // drops all normals, colors, and tex coords
 // this is slow due to repeated findNearestVertex
 // the faster approach would bin all the vertices
-ofMesh mergeNearbyVertices(ofMesh& mesh, float tolerance = 0) {
+ofMesh mergeNearbyVertices(const ofMesh& mesh, float tolerance = 0) {
     if(tolerance == 0) {
         return mesh;
     }
@@ -281,9 +296,6 @@ ofMesh mergeNearbyVertices(ofMesh& mesh, float tolerance = 0) {
         } else {
             remappedIndices.push_back(0);
             mergedMesh.addVertex(cur);
-        }
-        if(status.update(i)) {
-            ofLog() << status.getPercentage() << "%";
         }
     }
     n = mesh.getNumIndices();
@@ -309,9 +321,7 @@ void getBoundingBox(const ofMesh& mesh, ofVec3f& cornerMin, ofVec3f& cornerMax) 
 	}
 }
 
-void centerAndNormalize(ofMesh& mesh) {
-	ofVec3f cornerMin, cornerMax;
-	getBoundingBox(mesh, cornerMin, cornerMax);
+void centerAndNormalize(ofMesh& mesh, ofVec3f cornerMin, ofVec3f cornerMax) {
 	ofVec3f translate = -(cornerMax + cornerMin) / 2;
 	ofVec3f range = (cornerMax - cornerMin);
 	float maxRange = 0;
@@ -324,6 +334,12 @@ void centerAndNormalize(ofMesh& mesh) {
 		vertices[i] += translate;
 		vertices[i] *= scale;
 	}
+}
+
+void centerAndNormalize(ofMesh& mesh) {
+	ofVec3f cornerMin, cornerMax;
+	getBoundingBox(mesh, cornerMin, cornerMax);
+    centerAndNormalize(mesh, cornerMin, cornerMax);
 }
 
 ofVec3f randomVec3f(float range) {
@@ -360,11 +376,18 @@ void drawNormals(const ofMesh& mesh, float normalLength) {
 	}
 }
 
-ofMesh collapseModel(ofxAssimpModelLoader model) {
+vector<ofMesh> getMeshes(ofxAssimpModelLoader& model) {
+    vector<ofMesh> meshes;
+    for(int i = 0; i < model.getNumMeshes(); i++) {
+        meshes.push_back(model.getMesh(i));
+    }
+    return meshes;
+}
+
+ofMesh joinMeshes(vector<ofMesh>& meshes) {
 	ofMesh mesh;
-	for(int i = 0; i < model.getNumMeshes(); i++) {
-		ofMesh curMesh = model.getMesh(i);
-		mesh.append(curMesh);
+	for(int i = 0; i < meshes.size(); i++) {
+		mesh.append(meshes[i]);
 	}
 	return mesh;
 }

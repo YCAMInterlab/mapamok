@@ -19,7 +19,8 @@ public:
     
     Mapamok mapamok;
     
-    const float cornerAmount = .05;
+    const float cornerRatio = .1;
+    const int cornerMinimum = 3;
     const float mergeTolerance = .001;
 	
 	bool editToggle = true;
@@ -27,10 +28,9 @@ public:
 	bool saveButton = false;
 	float backgroundBrightness = 0;
 	bool useShader = false;
-	
-	ofxAssimpModelLoader model;
+
 	ofVboMesh mesh;
-	ofVboMesh mergedMesh, cornerMesh, imageMesh;
+	ofVboMesh cornerMesh, imageMesh;
 	ofEasyCam cam;
 	SelectablePoints objectPoints;
 		
@@ -100,11 +100,6 @@ public:
 	void draw() {
 		ofBackground(backgroundBrightness);
 		ofSetColor(255);
-		
-		cornerMesh.clearIndices();
-        vector<unsigned int> cornerIndices = getRankedCorners(mergedMesh);
-        cornerIndices.resize(ofMap(mouseX, 0, ofGetWidth(), 0, cornerIndices.size(), true));//cornerAmount * cornerIndices.size());
-		cornerMesh.addIndices(cornerIndices);
         
 		cam.begin();
 //		ofSetLineWidth(2);
@@ -156,23 +151,36 @@ public:
         ofDrawBitmapString(ofToString((int) ofGetFrameRate()), 10, ofGetHeight() - 40);
 	}
 	void loadModel(string filename) {
+        ofxAssimpModelLoader model;
 		model.loadModel(filename);
-		mesh = collapseModel(model);
-		centerAndNormalize(mesh);
+        vector<ofMesh> meshes = getMeshes(model);
         
-        ofFile file(filename);
-        string base = file.getBaseName();
-        string mergedFilename = base + "-merged.ply";
+        // join all the meshes
+		mesh = joinMeshes(meshes);
+        ofVec3f cornerMin, cornerMax;
+        getBoundingBox(mesh, cornerMin, cornerMax);
+		centerAndNormalize(mesh, cornerMin, cornerMax);
         
-        if(ofFile(mergedFilename).exists()) {
-            mergedMesh.load(mergedFilename);
-        } else {
-            mergedMesh = mergeNearbyVertices(mesh, mergeTolerance);
-            mergedMesh.save(mergedFilename);
+        // normalize submeshes before any further processing
+        for(int i = 0; i < meshes.size(); i++) {
+            centerAndNormalize(meshes[i], cornerMin, cornerMax);
         }
-        mergedMesh.setMode(OF_PRIMITIVE_POINTS);
         
-        cornerMesh = mergedMesh;
+        // merge
+        cornerMesh.clear();
+        // crashed on mesh 312, index 48
+        for(int i = 0; i < meshes.size(); i++) {
+            ofMesh mergedMesh = mergeNearbyVertices(meshes[i], mergeTolerance);
+            vector<unsigned int> cornerIndices = getRankedCorners(mergedMesh);
+            int n = cornerIndices.size() * cornerRatio;
+            n = MIN(MAX(n, cornerMinimum), cornerIndices.size());
+            for(int j = 0; j < n; j++) {
+                int index = cornerIndices[j];
+                const ofVec3f& corner = mergedMesh.getVertices()[index];
+                cornerMesh.addVertex(corner);
+            }
+        }
+        cornerMesh.setMode(OF_PRIMITIVE_POINTS);
 	}
 	void dragEvent(ofDragInfo dragInfo) {
 		if(dragInfo.files.size() == 1) {
