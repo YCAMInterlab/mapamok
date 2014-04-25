@@ -8,7 +8,7 @@ protected:
 	vector<DraggablePoint> points;
 	set<unsigned int> selected;
 	
-	float pointSize, clickRadiusSquared;
+	float clickRadiusSquared;
 	
 public:
 	SelectablePoints()
@@ -21,6 +21,13 @@ public:
 		points.push_back(DraggablePoint());
 		points.back().position = v;
 	}
+    DraggablePoint& get(int i) {
+        return points[i];
+    }
+    void clear() {
+        points.clear();
+        selected.clear();
+    }
 	void setClickRadius(float clickRadius) {
 		this->clickRadiusSquared = clickRadius * clickRadius;
 	}

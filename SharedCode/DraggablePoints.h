@@ -29,7 +29,7 @@ protected:
 	}
 	
 public:
-	void mousePressed(ofMouseEventArgs& mouse) {
+	virtual void mousePressed(ofMouseEventArgs& mouse) {
 		SelectablePoints::mousePressed(mouse);
 		mouseStart = mouse;
 		cachePositions();

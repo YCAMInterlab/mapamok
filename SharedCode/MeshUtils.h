@@ -271,8 +271,6 @@ public:
 
 // assumes mesh is indexed
 // drops all normals, colors, and tex coords
-// this is slow due to repeated findNearestVertex
-// the faster approach would bin all the vertices
 ofMesh mergeNearbyVertices(const ofMesh& mesh, float tolerance = 0) {
     if(tolerance == 0) {
         return mesh;
