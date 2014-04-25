@@ -10,11 +10,15 @@ public:
 	,dragging(false)
     ,hit(false) {
 	}
+    void reset() {
+        selected = false;
+        dragging = false;
+        hit = false;
+    }
 	bool isHit(ofVec2f v, float clickRadiusSquared) {
 		bool curHit = position.distanceSquared(v) < clickRadiusSquared;
         if(curHit) {
             hit = true;
-            cout << "hit" << endl;
         }
         return curHit;
 	}

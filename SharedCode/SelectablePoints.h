@@ -48,6 +48,15 @@ public:
 			}
 		}
 	}
+    virtual void keyPressed(ofKeyEventArgs& key) {
+        if(key.key == OF_KEY_DEL || key.key == OF_KEY_BACKSPACE) {
+            set<unsigned int>::iterator itr;
+            for(itr = selected.begin(); itr != selected.end(); itr++) {
+                points[*itr].reset();
+            }
+            selected.clear();
+        }
+    }
 	void draw(ofEventArgs& args) {
 		for(int i = 0; i < size(); i++) {
 			points[i].draw(clickRadiusSquared);

@@ -44,6 +44,7 @@ public:
 		cachePositions();
 	}
 	void keyPressed(ofKeyEventArgs& key) {
+        SelectablePoints::keyPressed(key);
 		if(isDirectionKey(key.key)) {
 			float multiplier = ofGetKeyPressed(OF_KEY_COMMAND) ? .25 : 1;
 			ofVec2f offset = multiplier * getDirectionFromKey(key.key);

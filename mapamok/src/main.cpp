@@ -1,8 +1,3 @@
-/*
- Mapamaok app. This should only handle the things that are present regardless of how many copies of Mapamok
- you're running. For example: definitely background color, calibration is more complex.
- */
-
 // separate click radius from draw radius
 // abstract DraggablePoint into template
 // don't move model when dragging points
@@ -113,12 +108,7 @@ public:
         }
         return -1;
     }
-    void draw() {
-        ofBackground(backgroundBrightness);
-        ofSetColor(255);
-        
-        cam.begin();
-        //		ofSetLineWidth(2);
+    void render() {
         int renderModeSelection = getSelection(renderMode);
         if(renderModeSelection == RENDER_MODE_FACES) {
             //            ofEnableDepthTest();
@@ -143,18 +133,14 @@ public:
             mesh.drawWireframe();
             prepareRender(false, false, false);
         }
+    }
+    void draw() {
+        ofBackground(backgroundBrightness);
+        ofSetColor(255);
         
-        float pointSize = 4;
-        glPointSize(pointSize);
-        
-//		ofEnableDepthTest();
-//		ofSetColor(ofColor::red);
-//		glEnable(GL_POLYGON_OFFSET_POINT);
-//		glPolygonOffset(-pointSize, -pointSize);
-//		cornerMesh.draw();
-//		glDisable(GL_POLYGON_OFFSET_POINT);
-//		ofDisableDepthTest();
-        
+        cam.begin();
+        ofSetColor(255, 128);
+        mesh.drawFaces();
         cam.end();
         
         ofMesh cornerMeshImage = cornerMesh;
@@ -190,7 +176,14 @@ public:
                 objectPoints.push_back(cornerMesh.getVertex(i));
             }
         }
-        mapamok.update(imagePoints, objectPoints);
+        
+        // should only calculate this when the points are updated
+        mapamok.update(ofGetWidth(), ofGetHeight(), imagePoints, objectPoints);
+        if(mapamok.calibrationReady) {
+            mapamok.begin();
+            mesh.draw();
+            mapamok.end();
+        }
         
         ofSetColor(255);
         ofDrawBitmapString(ofToString((int) ofGetFrameRate()), 10, ofGetHeight() - 40);
