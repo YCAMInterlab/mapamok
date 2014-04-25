@@ -58,8 +58,10 @@ public:
         }
     }
 	void draw(ofEventArgs& args) {
+        ofPushStyle();
 		for(int i = 0; i < size(); i++) {
 			points[i].draw(clickRadiusSquared);
 		}
+        ofPopStyle();
 	}
 };

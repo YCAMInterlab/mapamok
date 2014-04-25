@@ -3,6 +3,7 @@
 
 #include "ofxAssimpModelLoader.h"
 #include "ofAutoShader.h"
+#include "MeshUtils.h"
 
 ofMesh collapseModel(ofxAssimpModelLoader model) {
     ofMesh mesh;
@@ -21,29 +22,31 @@ public:
     ofAutoShader shader;
     
     void setup() {
-//        ofSetVerticalSync(false);
+        ofSetVerticalSync(false);
         model.loadModel("model.dae");
         shader.setup("Outline");
         mesh = collapseModel(model);
-        ofLog() << mesh.getNumVertices() << " " << mesh.getNumIndices();
+        mesh = convertIndices(mesh);
+        
+        mesh.setMode(OF_PRIMITIVE_TRIANGLES);
+        mesh.clearColors();
+        int n = mesh.getNumVertices();
+        for(int i = 0; i < n; i++) {
+            mesh.addColor(ofColor(255, 0, 0));
+            mesh.addColor(ofColor(0, 255, 0));
+            mesh.addColor(ofColor(0, 0, 255));
+        }
     }
     void update() {
     }
     void draw() {
+        ofEnableDepthTest();
         ofBackground(0);
-        if(true) {
             cam.begin();
             shader.begin();
-            model.drawFaces();
+            mesh.drawFaces();
             shader.end();
             cam.end();
-        } else {
-            ofPushStyle();
-            ofSetLineWidth(4);
-            ofLine(0, 0, ofGetWidth(), ofGetHeight());
-            ofLine(ofGetWidth(), 0, 0, ofGetHeight());
-            ofPopStyle();
-        }
         ofDrawBitmapString(ofToString((int) ofGetFrameRate()), 10, ofGetHeight() - 40);
     }
 };

@@ -65,6 +65,7 @@
 
 /* Begin PBXFileReference section */
 		2721BC211906E21D0084CEA1 /* ofAutoShader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ofAutoShader.h; sourceTree = "<group>"; };
+		27812673190AE5FC00C8EE54 /* MeshUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MeshUtils.h; sourceTree = "<group>"; };
 		278CD1781905F63E00C464A8 /* ofxAssimpAnimation.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ofxAssimpAnimation.cpp; sourceTree = "<group>"; };
 		278CD1791905F63E00C464A8 /* ofxAssimpAnimation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ofxAssimpAnimation.h; sourceTree = "<group>"; };
 		278CD17A1905F63E00C464A8 /* ofxAssimpMeshHelper.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ofxAssimpMeshHelper.cpp; sourceTree = "<group>"; };
@@ -346,6 +347,7 @@
 		E4B69E1C0A3A1BDC003C02F2 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				27812673190AE5FC00C8EE54 /* MeshUtils.h */,
 				2721BC211906E21D0084CEA1 /* ofAutoShader.h */,
 				E4B69E1D0A3A1BDC003C02F2 /* main.cpp */,
 			);

@@ -23,13 +23,17 @@ public:
         return curHit;
 	}
 	void draw(float clickRadiusSquared) {
-		float r = sqrt(clickRadiusSquared);
+		float r = 2;//sqrt(clickRadiusSquared);
 		ofPushStyle();
 		ofNoFill();
 		ofSetLineWidth(2);
 		if(selected) {
 			ofSetColor(ofColor::yellow);
 			ofCircle(position, r + 4);
+            ofSetLineWidth(1);
+            ofSetColor(255);
+            ofLine(position.x, 0, position.x, ofGetHeight());
+            ofLine(0, position.y, ofGetWidth(), position.y);
 		}
 		ofPopStyle();
 		ofPushStyle();

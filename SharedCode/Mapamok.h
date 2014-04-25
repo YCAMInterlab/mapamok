@@ -35,7 +35,7 @@ public:
                                   0, 0, 1);
         int flags =
 		CV_CALIB_USE_INTRINSIC_GUESS |
-		CV_CALIB_FIX_PRINCIPAL_POINT |
+//		CV_CALIB_FIX_PRINCIPAL_POINT |
 		CV_CALIB_FIX_ASPECT_RATIO |
 		CV_CALIB_FIX_K1 |
 		CV_CALIB_FIX_K2 |

@@ -14,8 +14,10 @@
 class ReferencePoints : public DraggablePoints {
 public:
     void draw(ofEventArgs& args) {
+        ofPushStyle();
         ofSetColor(ofColor::red);
         DraggablePoints::draw(args);
+        ofPopStyle();
     }
 };
 
@@ -54,9 +56,9 @@ public:
         cam.setNearClip(.1);
         cam.setFarClip(10);
         
-        referencePoints.setClickRadius(2);
+        referencePoints.setClickRadius(8);
         referencePoints.enableControlEvents();
-        referencePoints.enableDrawEvent();
+//        referencePoints.enableDrawEvent();
     }
     enum {
         RENDER_MODE_FACES = 0,
@@ -134,13 +136,12 @@ public:
             prepareRender(false, false, false);
         }
     }
-    void draw() {
-        ofBackground(backgroundBrightness);
-        ofSetColor(255);
-        
+    void drawEdit() {
         cam.begin();
+        ofPushStyle();
         ofSetColor(255, 128);
         mesh.drawFaces();
+        ofPopStyle();
         cam.end();
         
         ofMesh cornerMeshImage = cornerMesh;
@@ -156,6 +157,8 @@ public:
             }
         }
         
+        // if the calibration is ready, use the calibration to find the corner positions
+        
         // otherwise, update the points
         for(int i = 0; i < referencePoints.size(); i++) {
             DraggablePoint& cur = referencePoints.get(i);
@@ -165,6 +168,10 @@ public:
                 ofLine(cur.position, cornerMeshImage.getVertex(i));
             }
         }
+        
+        // should be a better way to do this
+        ofEventArgs args;
+        referencePoints.draw(args);
         
         // calculating the 3d mesh
         vector<ofVec2f> imagePoints;
@@ -179,13 +186,26 @@ public:
         
         // should only calculate this when the points are updated
         mapamok.update(ofGetWidth(), ofGetHeight(), imagePoints, objectPoints);
+    }
+    void draw() {
+        ofBackground(backgroundBrightness);
+        ofSetColor(255);
+        
+        if(editToggle) {
+            drawEdit();
+        }
+        
         if(mapamok.calibrationReady) {
             mapamok.begin();
+            if(editToggle) {
+                ofSetColor(255, 128);
+            } else {
+                ofSetColor(255);
+            }
             mesh.draw();
             mapamok.end();
         }
         
-        ofSetColor(255);
         ofDrawBitmapString(ofToString((int) ofGetFrameRate()), 10, ofGetHeight() - 40);
     }
     void loadModel(string filename) {
