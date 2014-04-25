@@ -180,7 +180,17 @@ public:
             }
         }
         
-        // try calculating the 3d mesh
+        // calculating the 3d mesh
+        vector<ofVec2f> imagePoints;
+        vector<ofVec3f> objectPoints;
+        for(int i = 0; i < referencePoints.size(); i++) {
+            DraggablePoint& cur = referencePoints.get(i);
+            if(cur.hit) {
+                imagePoints.push_back(cur.position);
+                objectPoints.push_back(cornerMesh.getVertex(i));
+            }
+        }
+        mapamok.update(imagePoints, objectPoints);
         
         ofSetColor(255);
         ofDrawBitmapString(ofToString((int) ofGetFrameRate()), 10, ofGetHeight() - 40);
