@@ -1,6 +1,7 @@
 // separate click radius from draw radius
 // abstract DraggablePoint into template
 // don't move model when dragging points
+// only select one point at a time.
 
 #include "ofMain.h"
 #include "ofAppGLFWWindow.h"
@@ -45,7 +46,7 @@ public:
     
     void setup() {
         ofSetWindowTitle("mapamok");
-        ofSetVerticalSync(false);
+        ofSetVerticalSync(true);
         setupGui();
         if(ofFile::doesFileExist("model.dae")) {
             loadModel("model.dae");

@@ -278,7 +278,6 @@ ofMesh mergeNearbyVertices(const ofMesh& mesh, float tolerance = 0) {
     float squareTolerance = tolerance * tolerance;
     ofMesh mergedMesh;
     int n = mesh.getNumVertices();
-    PercentStatus status(n);
     vector<int> remappedIndices;
     for(int i = 0; i < n; i++) {
         const ofVec3f& cur = mesh.getVertices()[i];
@@ -404,4 +403,186 @@ void prepareRender(bool useDepthTesting, bool useBackFaceCulling, bool useFrontF
 	} else {
 		glDisable(GL_CULL_FACE);
 	}
+}
+
+
+ofVec3f getNormal(const ofVec3f& v1, const ofVec3f& v2, const ofVec3f& v3) {
+	ofVec3f a = v1 - v2;
+	ofVec3f b = v3 - v2;
+	ofVec3f normal = b.cross(a);
+	normal.normalize();
+	return normal;
+}
+
+ofMesh convertFromIndices(const ofMesh& mesh) {
+	ofMesh result;
+	// have to do a const_cast because ofMesh::get*() is not const correct
+	ofMesh& cmesh = const_cast<ofMesh&>(mesh);
+	int vertices = mesh.getNumVertices();
+	int colors = mesh.getNumColors();
+	int normals = mesh.getNumNormals();
+	int texcoords = mesh.getNumTexCoords();
+	int indices = mesh.getNumIndices();
+	for(int i = 0; i < indices; i++) {
+		int cur = cmesh.getIndex(i);
+		if(vertices > 0) {
+			result.addVertex(cmesh.getVertex(cur));
+		}
+		if(colors > 0) {
+			result.addColor(cmesh.getColor(cur));
+		}
+		if(normals > 0) {
+			result.addNormal(cmesh.getNormal(cur));
+		}
+		if(texcoords > 0) {
+			result.addTexCoord(cmesh.getTexCoord(cur));
+		}
+	}
+	return result;
+}
+
+void buildNormalsFaces(ofMesh& mesh) {
+	for(int i = 0; i < mesh.getNumVertices(); i += 3) {
+		int i0 = i + 0, i1 = i + 1, i2 = i + 2;
+		ofVec3f normal = getNormal(mesh.getVertices()[i0], mesh.getVertices()[i1], mesh.getVertices()[i2]);
+		for(int j = 0; j < 3; j++) {
+			mesh.addNormal(normal);
+		}
+	}
+}
+
+// assumes indexed vertices and triangles
+void buildNormalsSingle(ofMesh& mesh) {
+	vector<ofIndexType>& indices = mesh.getIndices();
+	vector<bool> ready(mesh.getNumVertices());
+	vector<ofVec3f> normals(mesh.getNumVertices());
+	for(int i = 0; i < indices.size(); i += 3) {
+		int i0 = indices[i + 0], i1 = indices[i + 1], i2 = indices[i + 2];
+		ofVec3f normal = getNormal(mesh.getVertices()[i0], mesh.getVertices()[i1], mesh.getVertices()[i2]);
+		if(!ready[i0]) {
+			normals[i0] = normal;
+			ready[i0] = true;
+		}
+		if(!ready[i1]) {
+			normals[i1] = normal;
+			ready[i1] = true;
+		}
+		if(!ready[i2]) {
+			normals[i2] = normal;
+			ready[i2] = true;
+		}
+	}
+	mesh.addNormals(normals);
+}
+
+// assumes indexed vertices and triangles
+void buildNormalsAverage(ofMesh& mesh) {
+	vector<ofIndexType>& indices = mesh.getIndices();
+	vector<ofVec3f> normals(mesh.getNumVertices());
+	for(int i = 0; i < indices.size(); i += 3) {
+		int i0 = indices[i + 0], i1 = indices[i + 1], i2 = indices[i + 2];
+		ofVec3f normal = getNormal(mesh.getVertices()[i0], mesh.getVertices()[i1], mesh.getVertices()[i2]);
+		normals[i0] += normal;
+		normals[i1] += normal;
+		normals[i2] += normal;
+	}
+	for(int i = 0; i < normals.size(); i++) {
+		normals[i].normalize();
+	}
+	mesh.addNormals(normals);
+}
+
+// need to check that this actually works
+class IndexedPoint {
+public:
+    const ofVec3f* vertex;
+    const ofFloatColor* color;
+    const ofVec3f* normal;
+    const ofVec2f* texCoord;
+    
+    IndexedPoint(const ofMesh& mesh, int i) {
+        vertex = mesh.getNumVertices() > 0 ? &(mesh.getVerticesPointer()[i]) : NULL;
+        color = mesh.getNumColors() > 0 ? &(mesh.getColorsPointer()[i]) : NULL;
+        normal = mesh.getNumNormals() > 0 ? &(mesh.getNormalsPointer()[i]) : NULL;
+        texCoord = mesh.getNumTexCoords() > 0 ? &(mesh.getTexCoordsPointer()[i]) : NULL;
+    }
+    // used for map operator[]
+    bool operator<(const IndexedPoint& point) const {
+        if(vertex->x < point.vertex->x) {
+            return false;
+        } else if(vertex->x > point.vertex->x) {
+            return true;
+        } else {
+            if(vertex->y < point.vertex->y) {
+                return false;
+            } else if(vertex->y > point.vertex->y) {
+                return true;
+            } else {
+                return false; // equal
+            }
+        }
+    }
+};
+
+ofMesh convertToIndices(ofMesh& mesh) {
+    ofMesh result;
+    
+    int vertices = mesh.getNumVertices(); // ofVec3f
+    int colors = mesh.getNumColors(); // ofFloatColor
+    int normals = mesh.getNumNormals(); // ofVec3f
+    int texcoords = mesh.getNumTexCoords();	// ofVec2f
+    
+    bool usingColors = colors > 0;
+    bool usingNormals = normals > 0;
+    bool usingTexcoords = texcoords > 0;
+    
+    map<IndexedPoint, int> indexedMap;
+    vector<vector<int> > shared;
+    int index = 0;
+    for(int i = 0; i < vertices; i++) {
+        IndexedPoint cur(mesh, i);
+        if(indexedMap.find(cur) == indexedMap.end()) {
+            indexedMap[cur] = index;
+            shared.push_back(vector<int>());
+            index++;
+        }
+        int curIndex = indexedMap[cur];
+        result.addIndex(curIndex);
+        shared[curIndex].push_back(i);
+    }
+    
+    for(int i = 0; i < shared.size(); i++) {
+        vector<int>& cur = shared[i];
+        
+        ofVec3f vertex = mesh.getVerticesPointer()[cur[0]];
+        ofFloatColor color(0, 0, 0, 0);
+        ofVec3f normal(0, 0, 0);
+        ofVec2f texCoord(0, 0);
+        float normalize = 1. / cur.size();
+        
+        for(int j = 0; j < cur.size(); j++) {
+            if(usingColors) {
+                color += mesh.getColorsPointer()[cur[j]] * normalize;
+            }
+            if(usingNormals) {
+                normal += mesh.getNormalsPointer()[cur[j]] * normalize;
+            }
+            if(usingTexcoords) {
+                texCoord += mesh.getTexCoordsPointer()[cur[j]] * normalize;
+            }
+        }
+        
+        result.addVertex(vertex);
+        if(usingColors) {
+            result.addColor(color);
+        }
+        if(usingNormals) {
+            result.addNormal(normal);
+        }
+        if(usingTexcoords) {
+            result.addTexCoord(texCoord);
+        }
+    }
+    
+    return result;
 }
